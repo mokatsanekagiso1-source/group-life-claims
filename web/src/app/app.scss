@@ -1,0 +1,16 @@
+.shell {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  font-family: system-ui, sans-serif;
+}
+
+.status {
+  &[data-status='up'] {
+    color: #1b7f3b;
+  }
+
+  &[data-status='down'] {
+    color: #b3261e;
+  }
+}
