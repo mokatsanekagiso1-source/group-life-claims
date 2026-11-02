@@ -14,6 +14,11 @@ spring:
   mvc:
     problemdetails:
       enabled: true
+  servlet:
+    multipart:
+      # Slightly above the 5 MB document limit, so oversize files reach the business rule and get a clear message.
+      max-file-size: 6MB
+      max-request-size: 7MB
 
 app:
   jwt:

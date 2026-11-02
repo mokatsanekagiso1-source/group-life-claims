@@ -6,6 +6,9 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
+    # Claim documents may be up to 5 MB; the API enforces the exact limit.
+    client_max_body_size 8m;
+
     # The API is only reachable through this proxy, so the browser never deals with CORS.
     location /api/ {
         proxy_pass ${API_UPSTREAM};
