@@ -103,7 +103,13 @@ jobs:
           if-no-files-found: ignore
       - name: Logs on failure
         if: failure()
-        run: docker compose logs
+        run: |
+          docker compose ps --all
+          for c in $(docker compose ps --all --quiet); do
+            echo "== $(docker inspect --format '{{.Name}}' "$c") health"
+            docker inspect --format '{{json .State.Health}}' "$c"
+          done
+          docker compose logs
       - name: Stop the stack
         if: always()
         run: docker compose down --volumes

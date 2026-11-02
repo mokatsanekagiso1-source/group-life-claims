@@ -17,5 +17,6 @@ ENV API_UPSTREAM=http://api:8080 \
 COPY nginx/default.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=build /workspace/dist/web/browser /usr/share/nginx/html
 EXPOSE 80
-HEALTHCHECK --interval=10s --timeout=3s --retries=5 \
-  CMD wget -qO- http://localhost/ > /dev/null || exit 1
+# 127.0.0.1 rather than localhost: busybox wget may try ::1 first and fail before reaching nginx.
+HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=5 \
+  CMD wget -q --spider http://127.0.0.1/ || exit 1

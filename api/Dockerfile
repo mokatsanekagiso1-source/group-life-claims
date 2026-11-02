@@ -16,5 +16,5 @@ USER app
 # 8080: API. 8081: actuator (health, metrics), kept off the public ingress.
 EXPOSE 8080 8081
 HEALTHCHECK --interval=10s --timeout=3s --start-period=30s --retries=5 \
-  CMD wget -qO- http://localhost:8081/actuator/health/readiness || exit 1
+  CMD wget -qO- http://127.0.0.1:8081/actuator/health/readiness || exit 1
 ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-jar", "app.jar"]
