@@ -11,6 +11,25 @@ spring:
       ddl-auto: validate
   flyway:
     enabled: true
+  mvc:
+    problemdetails:
+      enabled: true
+
+app:
+  jwt:
+    # Required. At least 32 characters; supplied through the JWT_SECRET environment variable.
+    secret: ${JWT_SECRET:}
+    issuer: grouplife-api
+    ttl: PT8H
+  bootstrap:
+    # When set and no admin exists, an "admin" user is created with this password on startup.
+    admin-password: ${BOOTSTRAP_ADMIN_PASSWORD:}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
 
 management:
   endpoints:

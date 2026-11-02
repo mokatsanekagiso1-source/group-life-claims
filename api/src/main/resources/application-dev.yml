@@ -1,0 +1,6 @@
+# Local development profile: synthetic seed data and a well-known, non-secret signing key.
+app:
+  jwt:
+    secret: ${JWT_SECRET:dev-only-signing-key-not-for-production-use}
+  seed:
+    enabled: true
