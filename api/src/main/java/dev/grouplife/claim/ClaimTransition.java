@@ -53,6 +53,10 @@ public class ClaimTransition {
         return id;
     }
 
+    public Claim getClaim() {
+        return claim;
+    }
+
     public ClaimStatus getFromStatus() {
         return fromStatus;
     }

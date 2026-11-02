@@ -1,5 +1,6 @@
 package dev.grouplife.claim;
 
+import dev.grouplife.claim.ClaimDtos.AssignRequest;
 import dev.grouplife.claim.ClaimDtos.ClaimDetail;
 import dev.grouplife.claim.ClaimDtos.ClaimSummary;
 import dev.grouplife.claim.ClaimDtos.SubmitClaimRequest;
@@ -7,6 +8,7 @@ import dev.grouplife.claim.ClaimDtos.TransitionRequest;
 import dev.grouplife.common.PageResponse;
 import dev.grouplife.security.CurrentUser;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -51,10 +53,21 @@ public class ClaimController {
     public PageResponse<ClaimSummary> search(
             @RequestParam(required = false) List<ClaimStatus> status,
             @RequestParam(required = false) UUID memberId,
+            @Parameter(description = "Username, \"me\", or \"none\" for unassigned claims")
+            @RequestParam(required = false) String assignee,
+            @Parameter(description = "Matches claim number or member name")
+            @RequestParam(required = false) String q,
             @ParameterObject @PageableDefault(size = 20, sort = "submittedAt", direction = Sort.Direction.ASC)
             Pageable pageable,
             @AuthenticationPrincipal Jwt jwt) {
-        return service.search(status, memberId, CurrentUser.from(jwt), pageable);
+        return service.search(status, memberId, assignee, q, CurrentUser.from(jwt), pageable);
+    }
+
+    @PostMapping("/{id}/assignment")
+    @Operation(summary = "Pick up a claim, or release it back to the queue", description = "Assessors only.")
+    public ClaimDetail assign(@PathVariable UUID id, @RequestBody AssignRequest request,
+            @AuthenticationPrincipal Jwt jwt) {
+        return service.assign(id, request.toMe(), CurrentUser.from(jwt));
     }
 
     @GetMapping("/{id}")

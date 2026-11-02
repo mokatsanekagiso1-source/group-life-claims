@@ -55,6 +55,9 @@ public class Claim {
     private Instant submittedAt;
     private Instant decidedAt;
 
+    /** Username of the assessor who has picked up the claim; null while it waits in the queue. */
+    private String assignee;
+
     @Version
     private long version;
 
@@ -112,6 +115,18 @@ public class Claim {
         return transition;
     }
 
+    /** Gives the claim to an assessor, or back to the shared queue when {@code username} is null. */
+    public void assignTo(String username) {
+        if (status.isTerminal()) {
+            throw new BusinessRuleException("CLAIM_CLOSED", "Closed claims cannot be reassigned");
+        }
+        this.assignee = username;
+    }
+
+    public boolean isOpen() {
+        return !status.isTerminal();
+    }
+
     void recordPayouts(List<PayoutCalculator.Share> shares) {
         payouts.clear();
         shares.forEach(s -> payouts.add(new ClaimPayout(this, s.beneficiaryName(), s.percent(), s.amount())));
@@ -155,6 +170,10 @@ public class Claim {
 
     public Instant getDecidedAt() {
         return decidedAt;
+    }
+
+    public String getAssignee() {
+        return assignee;
     }
 
     public List<ClaimTransition> getTransitions() {

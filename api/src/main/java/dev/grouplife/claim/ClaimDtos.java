@@ -23,8 +23,11 @@ public final class ClaimDtos {
 
     public record TransitionRequest(@NotNull ClaimStatus targetStatus, @Size(max = 1000) String reason) {}
 
+    public record AssignRequest(boolean toMe) {}
+
     public record ClaimSummary(UUID id, String claimNumber, UUID memberId, String memberName, CoverType coverType,
-            LocalDate eventDate, ClaimStatus status, BigDecimal coverAmount, Instant submittedAt, Instant decidedAt) {}
+            LocalDate eventDate, ClaimStatus status, BigDecimal coverAmount, Instant submittedAt, Instant decidedAt,
+            String assignee) {}
 
     public record TransitionView(ClaimStatus fromStatus, ClaimStatus toStatus, String actor, String reason,
             Instant occurredAt) {}
@@ -37,6 +40,6 @@ public final class ClaimDtos {
      */
     public record ClaimDetail(UUID id, String claimNumber, UUID memberId, String memberName, String policyNumber,
             CoverType coverType, LocalDate eventDate, String description, ClaimStatus status, BigDecimal coverAmount,
-            Instant submittedAt, Instant decidedAt, Set<ClaimStatus> allowedTransitions,
+            Instant submittedAt, Instant decidedAt, String assignee, Set<ClaimStatus> allowedTransitions,
             List<TransitionView> transitions, List<PayoutView> payouts) {}
 }

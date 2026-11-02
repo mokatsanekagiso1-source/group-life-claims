@@ -1,6 +1,8 @@
 package dev.grouplife.claim;
 
+import static dev.grouplife.claim.ClaimRepository.assignedTo;
 import static dev.grouplife.claim.ClaimRepository.forMember;
+import static dev.grouplife.claim.ClaimRepository.matching;
 import static dev.grouplife.claim.ClaimRepository.withStatusIn;
 
 import dev.grouplife.claim.ClaimDtos.ClaimDetail;
@@ -69,7 +71,21 @@ public class ClaimService {
         Instant now = clock.instant();
         Claim claim = claims.save(Claim.submit(claimNumber, member, request.coverType(), request.eventDate(),
                 request.description().trim(), user.username(), now));
-        events.publishEvent(ClaimTransitionedEvent.of(claim, null, user.username(), now));
+        events.publishEvent(ClaimTransitionedEvent.of(claim, null, user.username(), null, now));
+        return toDetail(claim, user);
+    }
+
+    /** An assessor takes a claim from the shared queue, or hands it back. */
+    public ClaimDetail assign(UUID id, boolean toMe, CurrentUser user) {
+        if (!user.is(Role.ASSESSOR)) {
+            throw new AccessDeniedException("Only assessors can pick up claims");
+        }
+        Claim claim = findVisibleTo(id, user);
+        if (!toMe && !user.username().equals(claim.getAssignee())) {
+            throw new BusinessRuleException("NOT_ASSIGNEE", "Only the assigned assessor can release this claim");
+        }
+        claim.assignTo(toMe ? user.username() : null);
+        claims.flush();
         return toDetail(claim, user);
     }
 
@@ -82,20 +98,31 @@ public class ClaimService {
 
         ClaimStatus from = claim.getStatus();
         Instant now = clock.instant();
-        claim.transitionTo(target, user.username(), request.reason(), now);
+        ClaimTransition transition = claim.transitionTo(target, user.username(), request.reason(), now);
         if (target == ClaimStatus.APPROVED) {
             claim.recordPayouts(payoutSplit(claim));
         }
+        if (target == ClaimStatus.UNDER_ASSESSMENT && claim.getAssignee() == null) {
+            // Starting an assessment picks the claim up, so two assessors do not work it at once.
+            claim.assignTo(user.username());
+        }
         claims.flush();
-        events.publishEvent(ClaimTransitionedEvent.of(claim, from, user.username(), now));
+        events.publishEvent(ClaimTransitionedEvent.of(claim, from, user.username(), transition.getReason(), now));
         return toDetail(claim, user);
     }
 
+    /**
+     * Searches claims. Members are always limited to their own. {@code assignee} may be a username,
+     * {@code "me"}, or {@code "none"} for the unassigned queue; {@code text} matches the claim number
+     * or member name.
+     */
     @Transactional(readOnly = true)
-    public PageResponse<ClaimSummary> search(Collection<ClaimStatus> statuses, UUID memberId, CurrentUser user,
-            Pageable pageable) {
+    public PageResponse<ClaimSummary> search(Collection<ClaimStatus> statuses, UUID memberId, String assignee,
+            String text, CurrentUser user, Pageable pageable) {
         UUID scopedMember = user.is(Role.MEMBER) ? user.memberId() : memberId;
-        Specification<Claim> spec = Specification.allOf(withStatusIn(statuses), forMember(scopedMember));
+        String scopedAssignee = "me".equalsIgnoreCase(assignee) ? user.username() : assignee;
+        Specification<Claim> spec = Specification.allOf(withStatusIn(statuses), forMember(scopedMember),
+                assignedTo(scopedAssignee), matching(text));
         return PageResponse.of(claims.findAll(spec, pageable).map(ClaimService::toSummary));
     }
 
@@ -104,7 +131,8 @@ public class ClaimService {
         return toDetail(findVisibleTo(id, user), user);
     }
 
-    private Claim findVisibleTo(UUID id, CurrentUser user) {
+    /** Loads a claim the user may see. Other members' claims look missing rather than forbidden. */
+    public Claim findVisibleTo(UUID id, CurrentUser user) {
         Claim claim = claims.findById(id).orElseThrow(() -> new NotFoundException("Claim", id));
         if (user.is(Role.MEMBER) && !user.ownsMember(claim.getMember().getId())) {
             // Same response as a missing claim, so members cannot probe for other people's claim ids.
@@ -124,7 +152,7 @@ public class ClaimService {
         return false;
     }
 
-    private static List<PayoutCalculator.Share> payoutSplit(Claim claim) {
+    static List<PayoutCalculator.Share> payoutSplit(Claim claim) {
         Member member = claim.getMember();
         if (!member.hasCompleteBeneficiaryAllocation()) {
             throw new BusinessRuleException("BENEFICIARIES_INCOMPLETE",
@@ -138,7 +166,7 @@ public class ClaimService {
     static ClaimSummary toSummary(Claim c) {
         return new ClaimSummary(c.getId(), c.getClaimNumber(), c.getMember().getId(), c.getMember().fullName(),
                 c.getCoverType(), c.getEventDate(), c.getStatus(), c.getCoverAmount(), c.getSubmittedAt(),
-                c.getDecidedAt());
+                c.getDecidedAt(), c.getAssignee());
     }
 
     static ClaimDetail toDetail(Claim c, CurrentUser user) {
@@ -147,7 +175,7 @@ public class ClaimService {
                 .collect(Collectors.toCollection(() -> EnumSet.noneOf(ClaimStatus.class)));
         return new ClaimDetail(c.getId(), c.getClaimNumber(), c.getMember().getId(), c.getMember().fullName(),
                 c.getMember().getPolicy().getPolicyNumber(), c.getCoverType(), c.getEventDate(), c.getDescription(),
-                c.getStatus(), c.getCoverAmount(), c.getSubmittedAt(), c.getDecidedAt(), allowed,
+                c.getStatus(), c.getCoverAmount(), c.getSubmittedAt(), c.getDecidedAt(), c.getAssignee(), allowed,
                 c.getTransitions().stream()
                         .map(t -> new TransitionView(t.getFromStatus(), t.getToStatus(), t.getActor(), t.getReason(),
                                 t.getOccurredAt()))

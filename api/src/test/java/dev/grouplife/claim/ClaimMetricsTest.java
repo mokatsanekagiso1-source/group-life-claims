@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import dev.grouplife.policy.CoverType;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.time.Duration;
 import java.time.Instant;
@@ -54,6 +55,7 @@ class ClaimMetricsTest {
     }
 
     private static ClaimTransitionedEvent event(ClaimStatus from, ClaimStatus to, Instant at) {
-        return new ClaimTransitionedEvent(UUID.randomUUID(), "CLM-000001", from, to, "tester", SUBMITTED, at);
+        return new ClaimTransitionedEvent(UUID.randomUUID(), "CLM-000001", UUID.randomUUID(), "Test Member",
+                CoverType.DEATH, from, to, "tester", null, null, SUBMITTED, at);
     }
 }
