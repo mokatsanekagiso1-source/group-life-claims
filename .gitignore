@@ -1,0 +1,15 @@
+# Secrets
+.env
+!.env.example
+
+# Java / Maven
+api/target/
+
+# Local Claude Code settings
+.claude/settings.local.json
+
+# IDEs and OS
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
