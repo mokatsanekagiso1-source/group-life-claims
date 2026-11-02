@@ -13,3 +13,4 @@ Each record has four parts: **Status** (proposed, accepted or superseded), **Con
 | [0004](0004-claim-state-machine-and-audit.md) | Claim state machine in the domain, with an append-only audit trail |
 | [0005](0005-problem-details.md) | RFC 9457 problem details with stable codes |
 | [0006](0006-observability.md) | Business metrics from the database, actuator on a private port |
+| [0007](0007-azure-container-apps.md) | Host the demo on Azure Container Apps |

@@ -2,6 +2,10 @@
 
 [![CI](../../actions/workflows/ci.yml/badge.svg)](../../actions/workflows/ci.yml)
 
+**Live demo:** _coming soon_ <!-- TODO(live-demo-url): after the first Azure deploy, replace
+"_coming soon_" with [<LIVE_DEMO_URL>](<LIVE_DEMO_URL>) and sign in as member, assessor or admin
+with password Password1! -->
+
 Policy administration and claims for group life insurance: employer schemes, member cover,
 beneficiaries, age-banded premiums and a claims workflow with a full audit trail.
 
@@ -126,6 +130,13 @@ cd web && npm ci && npm start               # http://localhost:4200, proxies /ap
 CI runs all four on every push and pull request, then checks that Prometheus is scraping and
 Grafana has loaded the dashboard.
 
+## Deploy
+
+The live demo runs on Azure Container Apps with a managed PostgreSQL database, declared in
+[`infra/azure/main.bicep`](infra/azure/main.bicep) and deployed by a GitHub Actions workflow that
+signs in to Azure with OpenID Connect. One-time setup is in
+[docs/deploy-azure.md](docs/deploy-azure.md).
+
 ## Design decisions
 
 Short records in [docs/decisions](docs/decisions/README.md):
@@ -136,12 +147,13 @@ Short records in [docs/decisions](docs/decisions/README.md):
 4. [Claim state machine in the domain, with an append-only audit trail](docs/decisions/0004-claim-state-machine-and-audit.md)
 5. [RFC 9457 problem details with stable codes](docs/decisions/0005-problem-details.md)
 6. [Business metrics from the database, actuator on a private port](docs/decisions/0006-observability.md)
+7. [Host the demo on Azure Container Apps](docs/decisions/0007-azure-container-apps.md)
 
 ## Repository layout
 
 ```
 api/     Spring Boot service: one package per domain, Flyway migrations, tests
 web/     Angular app, nginx config, Cypress end-to-end tests
-infra/   Docker Compose, Prometheus config, Grafana provisioning and dashboard
-docs/    Decision records
+infra/   Docker Compose, Prometheus config, Grafana provisioning and dashboard, Azure Bicep
+docs/    Decision records and deployment guide
 ```
