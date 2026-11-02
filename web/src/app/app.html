@@ -1,5 +1,25 @@
+@if (auth.user(); as user) {
+  <mat-toolbar class="toolbar">
+    <a class="brand" routerLink="/">Group Life Claims</a>
+    <nav>
+      @if (isStaff()) {
+        <a mat-button routerLink="/members" routerLinkActive="active" data-cy="nav-members">Members</a>
+      }
+      @if (isStaff()) {
+        <a mat-button routerLink="/claims" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" data-cy="nav-claims">Claims queue</a>
+      }
+      @if (ownMemberId(); as memberId) {
+        <a mat-button [routerLink]="['/members', memberId]" routerLinkActive="active" data-cy="nav-my-cover">My cover</a>
+      }
+    </nav>
+    <span class="spacer"></span>
+    <span class="user" data-cy="current-user">{{ user.username }} · {{ user.role.toLowerCase() }}</span>
+    <button mat-icon-button (click)="auth.logout()" aria-label="Sign out" data-cy="sign-out">
+      <mat-icon>logout</mat-icon>
+    </button>
+  </mat-toolbar>
+}
+
 <main class="shell">
-  <h1>Group Life Claims</h1>
-  <p class="status" [attr.data-status]="apiStatus()">API: {{ apiStatus() }}</p>
   <router-outlet />
 </main>

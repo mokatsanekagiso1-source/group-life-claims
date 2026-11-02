@@ -1,52 +1,59 @@
 import { provideHttpClient } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { App } from './app';
+import { Session } from './core/models';
 
-describe('App', () => {
-  let httpMock: HttpTestingController;
+const SESSION_KEY = 'grouplife.session';
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [App],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
-    }).compileComponents();
-    httpMock = TestBed.inject(HttpTestingController);
+function session(overrides: Partial<Session> = {}): Session {
+  return {
+    accessToken: 'token',
+    expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
+    username: 'assessor',
+    role: 'ASSESSOR',
+    memberId: null,
+    ...overrides,
+  };
+}
+
+async function render() {
+  await TestBed.configureTestingModule({
+    imports: [App],
+    providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
+  }).compileComponents();
+  const fixture = TestBed.createComponent(App);
+  await fixture.whenStable();
+  return fixture.nativeElement as HTMLElement;
+}
+
+describe('App shell', () => {
+  afterEach(() => localStorage.clear());
+
+  it('hides the toolbar when signed out', async () => {
+    const el = await render();
+
+    expect(el.querySelector('mat-toolbar')).toBeNull();
   });
 
-  afterEach(() => httpMock.verify());
+  it('shows staff navigation to assessors', async () => {
+    localStorage.setItem(SESSION_KEY, JSON.stringify(session()));
 
-  function render() {
-    const fixture = TestBed.createComponent(App);
-    fixture.detectChanges();
-    return fixture;
-  }
+    const el = await render();
 
-  function statusText(fixture: ReturnType<typeof render>) {
-    return (fixture.nativeElement as HTMLElement).querySelector('.status')?.textContent;
-  }
-
-  it('renders the title', () => {
-    const fixture = render();
-    httpMock.expectOne('/actuator/health');
-    expect((fixture.nativeElement as HTMLElement).querySelector('h1')?.textContent).toContain(
-      'Group Life Claims',
-    );
+    expect(el.querySelector('[data-cy=current-user]')?.textContent).toContain('assessor');
+    expect(el.querySelector('[data-cy=nav-claims]')).not.toBeNull();
+    expect(el.querySelector('[data-cy=nav-my-cover]')).toBeNull();
   });
 
-  it('shows the API as up when the health check passes', async () => {
-    const fixture = render();
-    httpMock.expectOne('/actuator/health').flush({ status: 'UP' });
-    await fixture.whenStable();
-    expect(statusText(fixture)).toContain('up');
-  });
+  it('shows members only their own cover', async () => {
+    localStorage.setItem(SESSION_KEY, JSON.stringify(session({ username: 'member', role: 'MEMBER', memberId: 'm-1' })));
 
-  it('shows the API as down when the health check fails', async () => {
-    const fixture = render();
-    httpMock
-      .expectOne('/actuator/health')
-      .flush(null, { status: 503, statusText: 'Service Unavailable' });
-    await fixture.whenStable();
-    expect(statusText(fixture)).toContain('down');
+    const el = await render();
+
+    expect(el.querySelector('[data-cy=nav-my-cover]')).not.toBeNull();
+    expect(el.querySelector('[data-cy=nav-members]')).toBeNull();
+    expect(el.querySelector('[data-cy=nav-claims]')).toBeNull();
   });
 });
