@@ -2,62 +2,146 @@
 
 [![CI](../../actions/workflows/ci.yml/badge.svg)](../../actions/workflows/ci.yml)
 
-A policy administration and claims platform for group life insurance: employer schemes, member
-cover, beneficiaries, premiums and a claims workflow with a full audit trail. It is a portfolio
-project, and all data is synthetic.
+Policy administration and claims for group life insurance: employer schemes, member cover,
+beneficiaries, age-banded premiums and a claims workflow with a full audit trail.
 
-> **Status:** early development. The skeleton is in place; the domain and API come next.
+It is a portfolio project. All names, numbers and amounts are synthetic.
 
-## Stack
+<!-- TODO(demo-gif): record a 20-30 second walkthrough (member submits, assessor approves and pays,
+     timeline and payout split), save it as docs/demo.gif and replace this comment with:
+     ![Demo: a member submits a claim and an assessor approves and pays it](docs/demo.gif) -->
 
-| Layer    | Technology                                                       |
-| -------- | ---------------------------------------------------------------- |
-| API      | Java 21, Spring Boot 3, Spring Data JPA, Flyway, PostgreSQL      |
-| Web      | Angular, served by nginx                                         |
-| Testing  | JUnit 5, Testcontainers, Vitest                                  |
-| Ops      | Docker Compose, GitHub Actions                                   |
+## What it does
 
-## Quick start
+- **Admins** set up employer schemes, policies (cover types, salary multiple, waiting period) and
+  members.
+- **Members** see their cover and premium, nominate beneficiaries and submit claims.
+- **Assessors** work a queue of open claims, oldest first, and move each claim through its
+  lifecycle. Every step records who, when and why.
 
-Requires Docker.
+```mermaid
+stateDiagram-v2
+    direction LR
+    [*] --> SUBMITTED
+    SUBMITTED --> UNDER_ASSESSMENT
+    SUBMITTED --> CANCELLED : reason required
+    UNDER_ASSESSMENT --> APPROVED : payout split frozen
+    UNDER_ASSESSMENT --> REJECTED : reason required
+    UNDER_ASSESSMENT --> CANCELLED : reason required
+    APPROVED --> PAID
+    REJECTED --> [*]
+    PAID --> [*]
+    CANCELLED --> [*]
+```
+
+Business rules enforced by the API, each with its own error `code`:
+
+| Rule | Code |
+| --- | --- |
+| The member was active on the event date | `MEMBER_NOT_ACTIVE` |
+| The event is after the waiting period that starts at the join date | `WAITING_PERIOD` |
+| The policy includes the cover type and was in force | `COVER_TYPE_NOT_COVERED`, `POLICY_NOT_IN_FORCE` |
+| One open or paid claim per member per cover type | `DUPLICATE_CLAIM` |
+| Beneficiary allocations total exactly 100% | `ALLOCATION_NOT_100`, `BENEFICIARIES_INCOMPLETE` |
+| Rejecting or cancelling needs a reason | `REASON_REQUIRED` |
+| Only allowed status changes | 409 `invalid-claim-transition` |
+
+Payout = cover amount (annual salary × policy multiple), split by allocation and rounded so the
+shares add up to the cent. Monthly premium = cover amount × the rate for the member's age band.
+
+## Architecture
+
+```mermaid
+flowchart LR
+    browser([Browser])
+    subgraph compose [Docker Compose]
+        web["web<br/>nginx + Angular"]
+        api["api<br/>Spring Boot"]
+        db[(PostgreSQL)]
+        prom[Prometheus]
+        graf[Grafana]
+    end
+    browser -- ":4200" --> web
+    web -- "/api/** :8080" --> api
+    web -. "/actuator/health :8081" .-> api
+    api -- "JPA + Flyway" --> db
+    prom -- "scrape :8081/actuator/prometheus" --> api
+    graf --> prom
+    browser -- ":3000" --> graf
+```
+
+- **API:** a modular monolith packaged by domain (`scheme`, `policy`, `member`, `premium`,
+  `claim`), with REST controllers, DTOs, Bean Validation and RFC 9457 problem details for every
+  error. Schema changes are Flyway migrations; Hibernate only validates.
+- **Security:** stateless JWT bearer tokens, role checks with `@PreAuthorize`, and ownership checks
+  in the services. Members can only see their own records.
+- **Web:** Angular with standalone components, signals and Angular Material, lazy-loaded per page.
+  nginx serves it and proxies the API, so the browser never makes cross-origin calls.
+- **Observability:** Micrometer exports claims by status, transitions and time to decision to
+  Prometheus. Grafana is provisioned with a ready-made dashboard.
+
+## Run it
+
+Needs Docker. One command builds and starts everything with synthetic demo data:
 
 ```bash
 docker compose up --build
 ```
 
-| Service  | URL                                  |
-| -------- | ------------------------------------ |
-| Web      | http://localhost:4200                |
-| API      | http://localhost:8080/actuator/health |
-| Postgres | localhost:5432 (`grouplife` / `grouplife`) |
+| What | Where |
+| --- | --- |
+| Web app | http://localhost:4200 |
+| API docs (Swagger UI) | http://localhost:8080/swagger-ui.html |
+| Grafana dashboard | http://localhost:3000 (opens read-only; admin / `admin`) |
+| Prometheus | http://localhost:9090 |
 
-To change ports or credentials, copy `infra/.env.example` to `infra/.env` and edit it.
+Demo accounts, all with password `Password1!`:
 
-## Local development
+| User | Role | Try this |
+| --- | --- | --- |
+| `member` | Member | View your cover, submit a disability claim, withdraw it |
+| `assessor` | Assessor | Work the queue; try approving Sipho Dlamini's claim (blocked: no beneficiaries) |
+| `admin` | Admin | Search members, submit on a member's behalf |
 
-```bash
-# Database only
-docker compose up db
+To change ports or credentials, copy `infra/.env.example` to `infra/.env`. To start again from
+fresh seed data, run `docker compose down --volumes`.
 
-# API (http://localhost:8080)
-cd api && ./mvnw spring-boot:run
-
-# Web (http://localhost:4200, proxies /api and /actuator to the API)
-cd web && npm ci && npm start
-```
-
-Run the tests:
+## Develop
 
 ```bash
-cd api && ./mvnw verify          # integration tests need Docker for Testcontainers
-cd web && npm test -- --watch=false
+docker compose up db                        # just the database
+cd api && ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+cd web && npm ci && npm start               # http://localhost:4200, proxies /api to :8080
 ```
+
+## Test
+
+| Suite | Command | What it covers |
+| --- | --- | --- |
+| API unit and slice | `cd api && ./mvnw test` | State machine, eligibility rules, premiums, payout rounding, authorisation, error mapping |
+| API integration | `cd api && ./mvnw verify` | The real API against PostgreSQL in Testcontainers (needs Docker) |
+| Web unit | `cd web && npm test -- --watch=false` | Auth session and interceptor, error messages, shell, claim timeline |
+| End-to-end | `docker compose up --build --wait` then `cd web && npm run e2e` | Cypress through the browser against the full stack |
+
+CI runs all four on every push and pull request, then checks that Prometheus is scraping and
+Grafana has loaded the dashboard.
+
+## Design decisions
+
+Short records in [docs/decisions](docs/decisions/README.md):
+
+1. [Modular monolith, packaged by domain](docs/decisions/0001-modular-monolith.md)
+2. [Stay on Spring Boot 3.5 for now](docs/decisions/0002-spring-boot-3.md)
+3. [Self-issued JWTs with Spring's resource server](docs/decisions/0003-self-issued-jwt.md)
+4. [Claim state machine in the domain, with an append-only audit trail](docs/decisions/0004-claim-state-machine-and-audit.md)
+5. [RFC 9457 problem details with stable codes](docs/decisions/0005-problem-details.md)
+6. [Business metrics from the database, actuator on a private port](docs/decisions/0006-observability.md)
 
 ## Repository layout
 
 ```
-api/     Spring Boot service
-web/     Angular app
-infra/   Docker Compose and, later, Prometheus and Grafana config
-docs/    Architecture notes and decision records (docs/decisions/)
+api/     Spring Boot service: one package per domain, Flyway migrations, tests
+web/     Angular app, nginx config, Cypress end-to-end tests
+infra/   Docker Compose, Prometheus config, Grafana provisioning and dashboard
+docs/    Decision records
 ```
