@@ -11,18 +11,26 @@ describe('Signing in', () => {
     cy.location('pathname').should('eq', '/login');
   });
 
-  it('takes an admin to the member list and back out again', () => {
+  it('takes an admin to the dashboard and back out again', () => {
     cy.visit('/login');
     cy.get('[data-cy=username]').type('admin');
     cy.get('[data-cy=password]').type(DEMO_PASSWORD);
     cy.get('[data-cy=sign-in]').click();
 
-    cy.location('pathname').should('eq', '/members');
-    cy.get('[data-cy=member-table] tr.mat-mdc-row').should('have.length.greaterThan', 5);
-    cy.get('[data-cy=current-user]').should('contain', 'admin');
+    cy.location('pathname').should('eq', '/dashboard');
+    cy.get('[data-cy=kpi]').should('have.length', 6);
 
+    cy.get('[data-cy=account]').click();
+    cy.get('[data-cy=current-user]').should('contain', 'admin');
     cy.get('[data-cy=sign-out]').click();
     cy.location('pathname').should('eq', '/login');
+  });
+
+  it('signs in with one click from a demo account', () => {
+    cy.visit('/login');
+    cy.get('[data-cy=demo-member]').click();
+
+    cy.location('pathname').should('match', /^\/members\/[0-9a-f-]{36}$/);
   });
 
   it('keeps members out of staff pages', () => {

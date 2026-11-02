@@ -30,10 +30,25 @@ function submitClaimFor(search: string, coverType: string): Cypress.Chainable<st
 describe('An assessor working the queue', () => {
   beforeEach(() => cy.loginAs('assessor'));
 
-  it('sees open claims oldest first', () => {
+  it('lands on the dashboard and opens the queue from it', () => {
     cy.visit('/');
 
+    cy.location('pathname').should('eq', '/dashboard');
+    cy.get('[data-cy=kpi]').first().should('contain', 'Open claims');
+    cy.get('[data-cy=open-queue]').click();
     cy.location('pathname').should('eq', '/claims');
+  });
+
+  it('filters the queue to claims assigned to them', () => {
+    cy.visit('/claims');
+    cy.get('[data-cy=assignee-filter]').contains('Mine').click();
+
+    cy.get('[data-cy=claim-queue] tr.mat-mdc-row').each((row) => cy.wrap(row).should('contain', 'assessor'));
+  });
+
+  it('sees open claims oldest first', () => {
+    cy.visit('/claims');
+
     cy.get('[data-cy=claim-queue] tr.mat-mdc-row').should('have.length.at.least', 2);
     cy.get('[data-cy=claim-queue]').should('not.contain', 'Paid').and('not.contain', 'Rejected');
   });
