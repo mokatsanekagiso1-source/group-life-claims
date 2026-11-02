@@ -21,6 +21,10 @@ services:
       DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-grouplife}
       DB_USERNAME: ${POSTGRES_USER:-grouplife}
       DB_PASSWORD: ${POSTGRES_PASSWORD:-grouplife}
+      # The dev profile seeds synthetic demo data and supplies a non-secret signing key.
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      JWT_SECRET: ${JWT_SECRET:-}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-}
     ports:
       - "${API_PORT:-8080}:8080"
     depends_on:
