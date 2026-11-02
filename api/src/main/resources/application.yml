@@ -32,11 +32,20 @@ springdoc:
     path: /v3/api-docs
 
 management:
+  # Actuator runs on its own port so health and metrics stay off the public ingress.
+  server:
+    port: ${MANAGEMENT_PORT:8081}
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,prometheus
   endpoint:
     health:
       probes:
         enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
