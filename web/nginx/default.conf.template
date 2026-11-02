@@ -1,0 +1,35 @@
+# Rendered by the nginx image's entrypoint (envsubst) at container start.
+# API_UPSTREAM and HEALTH_UPSTREAM are set in the Dockerfile and can be overridden per environment.
+server {
+    listen 80;
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # The API is only reachable through this proxy, so the browser never deals with CORS.
+    location /api/ {
+        proxy_pass ${API_UPSTREAM};
+        # Host stays the upstream's own name: Azure Container Apps routes internal traffic by it.
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Only the aggregate health status is published; metrics stay on the private management port.
+    location = /actuator/health {
+        proxy_pass ${HEALTH_UPSTREAM};
+    }
+
+    # Angular's JS and CSS bundles have content hashes in their names, so they can be cached for a year.
+    location ~* \.(?:js|css)$ {
+        try_files $uri =404;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # Single-page app: unknown paths fall back to index.html for client-side routing.
+    location / {
+        try_files $uri $uri/ /index.html;
+        add_header Cache-Control "no-cache";
+    }
+}

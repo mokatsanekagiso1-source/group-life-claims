@@ -10,7 +10,11 @@ COPY . .
 RUN npm run build
 
 FROM nginx:1.28-alpine
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Defaults suit Docker Compose; Azure Container Apps overrides them with the API app's internal address.
+ENV API_UPSTREAM=http://api:8080 \
+    HEALTH_UPSTREAM=http://api:8081 \
+    NGINX_ENVSUBST_FILTER=_UPSTREAM$
+COPY nginx/default.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=build /workspace/dist/web/browser /usr/share/nginx/html
 EXPOSE 80
 HEALTHCHECK --interval=10s --timeout=3s --retries=5 \
