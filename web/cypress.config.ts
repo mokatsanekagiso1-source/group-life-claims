@@ -11,6 +11,8 @@ export default defineConfig({
     supportFile: 'cypress/support/e2e.ts',
     viewportWidth: 1280,
     viewportHeight: 800,
+    // The toolbar is sticky; scrolling targets to the top would tuck them underneath it.
+    scrollBehavior: 'center',
     video: false,
     retries: { runMode: 1, openMode: 0 },
   },
