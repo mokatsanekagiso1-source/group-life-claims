@@ -1,0 +1,4 @@
+# Hosted demo: synthetic seed data, but every secret must come from the environment.
+app:
+  seed:
+    enabled: true
