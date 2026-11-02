@@ -18,6 +18,7 @@ const CLAIM: ClaimDetail = {
   coverAmount: 1200000,
   submittedAt: '2026-05-03T08:00:00Z',
   decidedAt: '2026-05-10T12:00:00Z',
+  assignee: 'assessor',
   allowedTransitions: ['PAID'],
   transitions: [
     { fromStatus: null, toStatus: 'SUBMITTED', actor: 'member', reason: null, occurredAt: '2026-05-03T08:00:00Z' },
