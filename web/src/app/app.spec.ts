@@ -42,8 +42,10 @@ describe('App shell', () => {
 
     const el = await render();
 
-    expect(el.querySelector('[data-cy=current-user]')?.textContent).toContain('assessor');
+    expect(el.querySelector('[data-cy=account]')?.textContent).toContain('A');
+    expect(el.querySelector('[data-cy=nav-dashboard]')).not.toBeNull();
     expect(el.querySelector('[data-cy=nav-claims]')).not.toBeNull();
+    expect(el.querySelector('[data-cy=nav-schemes]')).toBeNull();
     expect(el.querySelector('[data-cy=nav-my-cover]')).toBeNull();
   });
 
@@ -53,7 +55,17 @@ describe('App shell', () => {
     const el = await render();
 
     expect(el.querySelector('[data-cy=nav-my-cover]')).not.toBeNull();
+    expect(el.querySelector('[data-cy=nav-calculator]')).not.toBeNull();
     expect(el.querySelector('[data-cy=nav-members]')).toBeNull();
     expect(el.querySelector('[data-cy=nav-claims]')).toBeNull();
+    expect(el.querySelector('[data-cy=nav-dashboard]')).toBeNull();
+  });
+
+  it('gives admins the schemes page', async () => {
+    localStorage.setItem(SESSION_KEY, JSON.stringify(session({ username: 'admin', role: 'ADMIN' })));
+
+    const el = await render();
+
+    expect(el.querySelector('[data-cy=nav-schemes]')).not.toBeNull();
   });
 });

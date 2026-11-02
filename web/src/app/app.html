@@ -1,25 +1,64 @@
 @if (auth.user(); as user) {
   <mat-toolbar class="toolbar">
-    <a class="brand" routerLink="/">Group Life Claims</a>
+    <button mat-icon-button class="menu-button" [matMenuTriggerFor]="mobileNav" aria-label="Menu">
+      <mat-icon>menu</mat-icon>
+    </button>
+    <a class="brand" routerLink="/">
+      <span class="logo"><mat-icon>shield</mat-icon></span>
+      <span class="brand-text">Group Life</span>
+    </a>
     <nav>
-      @if (isStaff()) {
-        <a mat-button routerLink="/members" routerLinkActive="active" data-cy="nav-members">Members</a>
-      }
-      @if (isStaff()) {
-        <a mat-button routerLink="/claims" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" data-cy="nav-claims">Claims queue</a>
-      }
-      @if (ownMemberId(); as memberId) {
-        <a mat-button [routerLink]="['/members', memberId]" routerLinkActive="active" data-cy="nav-my-cover">My cover</a>
+      @for (item of nav(); track item.link) {
+        <a
+          mat-button
+          [routerLink]="item.link"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
+          [attr.data-cy]="item.cy"
+        >
+          <mat-icon>{{ item.icon }}</mat-icon>
+          {{ item.label }}
+        </a>
       }
     </nav>
     <span class="spacer"></span>
-    <span class="user" data-cy="current-user">{{ user.username }} · {{ user.role.toLowerCase() }}</span>
-    <button mat-icon-button (click)="auth.logout()" aria-label="Sign out" data-cy="sign-out">
-      <mat-icon>logout</mat-icon>
+
+    <button class="search" (click)="palette.toggle()" aria-label="Search (Ctrl+K)" data-cy="open-palette">
+      <mat-icon>search</mat-icon>
+      <span class="search-text">Search</span>
+      <kbd>Ctrl K</kbd>
     </button>
+    <app-notification-bell />
+    <button mat-icon-button (click)="theme.cycle()" [matTooltip]="'Theme: ' + theme.preference()" aria-label="Switch theme" data-cy="theme">
+      <mat-icon class="theme-icon">{{ themeIcon() }}</mat-icon>
+    </button>
+    <button mat-icon-button [matMenuTriggerFor]="account" aria-label="Account" data-cy="account">
+      <span class="avatar">{{ initial() }}</span>
+    </button>
+
+    <mat-menu #account="matMenu" xPosition="before">
+      <div class="account-header" data-cy="current-user">
+        <strong>{{ user.username }}</strong>
+        <span>{{ user.role.toLowerCase() }}</span>
+      </div>
+      <button mat-menu-item (click)="auth.logout()" data-cy="sign-out">
+        <mat-icon>logout</mat-icon>
+        Sign out
+      </button>
+    </mat-menu>
+
+    <mat-menu #mobileNav="matMenu">
+      @for (item of nav(); track item.link) {
+        <a mat-menu-item [routerLink]="item.link">
+          <mat-icon>{{ item.icon }}</mat-icon>
+          {{ item.label }}
+        </a>
+      }
+    </mat-menu>
   </mat-toolbar>
+  <app-command-palette />
 }
 
-<main class="shell">
+<main class="shell" [class.bare]="!auth.user()">
   <router-outlet />
 </main>
