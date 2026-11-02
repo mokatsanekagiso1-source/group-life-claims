@@ -44,8 +44,7 @@ public class PremiumController {
     }
 
     @GetMapping("/premium-rates")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ASSESSOR')")
-    @Operation(summary = "The age-band rate table")
+    @Operation(summary = "The age-band rate table", description = "Any signed-in user; powers the premium calculator.")
     public List<RateBandView> rates() {
         return service.rateBands();
     }

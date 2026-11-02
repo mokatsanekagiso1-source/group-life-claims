@@ -10,6 +10,8 @@ public interface MemberRepository extends JpaRepository<Member, UUID>, JpaSpecif
 
     long countByPolicyId(UUID policyId);
 
+    long countByStatus(MemberStatus status);
+
     boolean existsByPolicyIdAndEmployeeNumber(UUID policyId, String employeeNumber);
 
     List<Member> findByPolicyIdOrderByLastNameAscFirstNameAsc(UUID policyId);
