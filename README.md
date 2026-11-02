@@ -23,6 +23,21 @@ It is a portfolio project. All names, numbers and amounts are synthetic.
 - **Assessors** work a queue of open claims, oldest first, and move each claim through its
   lifecycle. Every step records who, when and why.
 
+Around that core:
+
+| Feature | What it does |
+| --- | --- |
+| Live dashboard | Count-up KPIs, claims-by-status donut, six-month volume chart, decision-speed SLA meter, aging claims and recent activity; refreshes every minute |
+| Claim conversation | Member ↔ assessor messages on each claim, plus internal notes members never see |
+| Supporting documents | Drag-and-drop upload with progress; files are checked by their bytes (PDF, PNG, JPEG only), not their names |
+| Assignment and SLA | Assessors pick up claims; queue filters for "mine" and "unassigned"; overdue claims pulse red |
+| Notifications | In-app bell for new claims, decisions, messages and uploads, created in the same transaction as the change |
+| Beneficiary editor | Live allocation ring that only unlocks saving at exactly 100% |
+| Premium calculator | Sliders for salary, age and cover multiple over the real age-band rate table |
+| Admin | Schemes, policies and members created through dialogs |
+| Command palette | Ctrl+K to jump to any page, member or claim |
+| Polish | Light, dark or system theme; animated page transitions; confetti when a claim is paid; all motion respects reduced-motion settings |
+
 ```mermaid
 stateDiagram-v2
     direction LR
@@ -103,9 +118,10 @@ Demo accounts, all with password `Password1!`:
 
 | User | Role | Try this |
 | --- | --- | --- |
-| `member` | Member | View your cover, submit a disability claim, withdraw it |
-| `assessor` | Assessor | Work the queue; try approving Sipho Dlamini's claim (blocked: no beneficiaries) |
-| `admin` | Admin | Search members, submit on a member's behalf |
+| `member` | Member | View your cover, message the assessor, upload a document, rebalance beneficiaries |
+| `assessor` | Assessor | Dashboard, then the queue; try approving Sipho Dlamini's claim (blocked: no beneficiaries) |
+| `assessor2` | Assessor | A second assessor, so assignment and notifications have someone to hand over to |
+| `admin` | Admin | Create a scheme and policy, add members, press Ctrl+K and search |
 
 To change ports or credentials, copy `infra/.env.example` to `infra/.env`. To start again from
 fresh seed data, run `docker compose down --volumes`.
