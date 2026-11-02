@@ -6,7 +6,8 @@ describe('Business rules in the UI', () => {
     cy.visit('/members');
 
     // Bongani Zulu joined a month ago, so the policy's waiting period still applies.
-    cy.get('[data-cy=member-search]').type('Zulu');
+    // Focus first: Material's outline label sits over an empty input until it floats up.
+    cy.get('[data-cy=member-search]').focus().type('Zulu');
     cy.get('[data-cy=member-table] tr.mat-mdc-row').should('have.length', 1).click();
     cy.get('[data-cy=new-claim]').click();
 
