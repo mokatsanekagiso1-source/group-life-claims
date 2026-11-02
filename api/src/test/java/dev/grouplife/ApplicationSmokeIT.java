@@ -25,6 +25,9 @@ class ApplicationSmokeIT extends IntegrationTest {
 
     @Test
     void prometheusExportsTheClaimMetrics() {
+        // HTTP server metrics only appear once a request has been served.
+        rest.getForEntity("/v3/api-docs", String.class);
+
         var response = rest.getForEntity(management("/actuator/prometheus"), String.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
