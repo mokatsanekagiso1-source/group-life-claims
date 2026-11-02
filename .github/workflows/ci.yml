@@ -57,6 +57,17 @@ jobs:
         run: |
           curl -fsS http://localhost:4200/ | grep -q '<app-root>'
           curl -fsS http://localhost:4200/actuator/health | grep -q '"status":"UP"'
+      - name: Prometheus scrapes claim metrics and Grafana loads the dashboard
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS 'http://localhost:9090/api/v1/query?query=grouplife_claims_status' | grep -q '"status":"PAID"'; then
+              break
+            fi
+            sleep 3
+          done
+          curl -fsS 'http://localhost:9090/api/v1/query?query=grouplife_claims_status' | grep -q '"status":"PAID"'
+          curl -fsS http://localhost:3000/api/health | grep -q '"database": *"ok"'
+          curl -fsS http://localhost:3000/api/dashboards/uid/grouplife-claims | grep -q 'Group Life Claims'
       - name: Logs on failure
         if: failure()
         run: docker compose logs
