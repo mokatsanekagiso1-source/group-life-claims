@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, effect, inject, input, OnInit, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -8,7 +8,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTableModule } from '@angular/material/table';
-import { Router } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
+import { Router, RouterLink } from '@angular/router';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { MembersApi } from '../../core/api';
 import { MemberSummary } from '../../core/models';
@@ -19,6 +20,8 @@ import { problemMessage } from '../../core/problem';
   imports: [
     DatePipe,
     ReactiveFormsModule,
+    RouterLink,
+    MatButtonModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
@@ -36,6 +39,12 @@ import { problemMessage } from '../../core/problem';
       </mat-form-field>
     </header>
 
+    @if (policyId()) {
+      <p class="filter-note enter-fade">
+        <mat-icon>filter_alt</mat-icon> Showing one policy's members
+        <a mat-button routerLink="/members">Show everyone</a>
+      </p>
+    }
     @if (loading()) {
       <mat-progress-bar mode="indeterminate" />
     }
@@ -69,7 +78,9 @@ import { problemMessage } from '../../core/problem';
         <tr mat-header-row *matHeaderRowDef="columns"></tr>
         <tr
           mat-row
-          *matRowDef="let row; columns: columns"
+          *matRowDef="let row; columns: columns; let i = index"
+          class="enter-rise"
+          [style.--i]="i"
           tabindex="0"
           (click)="open(row)"
           (keydown.enter)="open(row)"
@@ -92,12 +103,31 @@ import { problemMessage } from '../../core/problem';
     .search {
       width: min(420px, 100%);
     }
+    .filter-note {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--mat-sys-on-surface-variant);
+    }
   `,
 })
 export class MemberListPage implements OnInit {
   private readonly api = inject(MembersApi);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+
+  /** Optional ?policyId= filter, linked from a scheme's policy card. */
+  readonly policyId = input<string>();
+
+  constructor() {
+    effect(() => {
+      this.policyId();
+      untracked(() => {
+        this.pageIndex.set(0);
+        this.load();
+      });
+    });
+  }
 
   protected readonly columns = ['employeeNumber', 'fullName', 'scheme', 'joinDate', 'status'];
   protected readonly search = new FormControl('', { nonNullable: true });
@@ -115,7 +145,6 @@ export class MemberListPage implements OnInit {
         this.pageIndex.set(0);
         this.load();
       });
-    this.load();
   }
 
   protected onPage(event: PageEvent): void {
@@ -131,7 +160,7 @@ export class MemberListPage implements OnInit {
   private load(): void {
     this.loading.set(true);
     this.error.set(null);
-    this.api.search(this.search.value, this.pageIndex(), this.pageSize()).subscribe({
+    this.api.search(this.search.value, this.pageIndex(), this.pageSize(), this.policyId()).subscribe({
       next: (page) => {
         this.members.set(page.content);
         this.total.set(page.totalElements);

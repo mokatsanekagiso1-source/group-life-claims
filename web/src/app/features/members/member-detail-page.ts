@@ -42,15 +42,22 @@ import { StatusChip } from '../../shared/status-chip';
           <h1 data-cy="member-name">{{ m.firstName }} {{ m.lastName }}</h1>
           <p class="subtitle">{{ m.employeeNumber }} · {{ m.schemeName }} · {{ m.status === 'ACTIVE' ? 'Active' : 'Exited' }}</p>
         </div>
-        @if (canSubmitClaim()) {
-          <a mat-flat-button [routerLink]="['/members', m.id, 'claims', 'new']" data-cy="new-claim">
-            <mat-icon>add</mat-icon> Submit a claim
-          </a>
-        }
+        <div class="header-actions">
+          @if (canEditBeneficiaries()) {
+            <a mat-stroked-button [routerLink]="['/members', m.id, 'beneficiaries']" data-cy="edit-beneficiaries">
+              <mat-icon>diversity_3</mat-icon> Beneficiaries
+            </a>
+          }
+          @if (canSubmitClaim()) {
+            <a mat-flat-button [routerLink]="['/members', m.id, 'claims', 'new']" data-cy="new-claim">
+              <mat-icon>add</mat-icon> Submit a claim
+            </a>
+          }
+        </div>
       </header>
 
       <div class="card-grid">
-        <mat-card appearance="outlined">
+        <mat-card appearance="outlined" class="enter-rise lift">
           <mat-card-header><mat-card-title>Cover</mat-card-title></mat-card-header>
           <mat-card-content>
             <dl>
@@ -64,13 +71,16 @@ import { StatusChip } from '../../shared/status-chip';
               <dd>{{ m.waitingPeriodEndsOn | date: 'mediumDate' }}</dd>
               @if (premium(); as p) {
                 <dt>Monthly premium</dt>
-                <dd>{{ p.monthlyPremium | currency: 'ZAR' : 'symbol-narrow' }} <span class="muted">(age {{ p.age }})</span></dd>
+                <dd>
+                  {{ p.monthlyPremium | currency: 'ZAR' : 'symbol-narrow' }} <span class="muted">(age {{ p.age }})</span>
+                  <a routerLink="/calculator" class="calc-link">What if?</a>
+                </dd>
               }
             </dl>
           </mat-card-content>
         </mat-card>
 
-        <mat-card appearance="outlined">
+        <mat-card appearance="outlined" class="enter-rise lift" style="--i: 1">
           <mat-card-header><mat-card-title>Personal details</mat-card-title></mat-card-header>
           <mat-card-content>
             <dl>
@@ -96,6 +106,11 @@ import { StatusChip } from '../../shared/status-chip';
         @if (m.beneficiaries.length === 0) {
           <p class="muted">No beneficiaries nominated. A claim cannot be approved until allocations total 100%.</p>
         } @else {
+          <div class="share-bar" aria-hidden="true">
+            @for (b of m.beneficiaries; track b.id) {
+              <span [style.flex]="b.allocationPercent" [style.--i]="$index" [title]="b.fullName"></span>
+            }
+          </div>
           <div class="table-scroll">
             <table mat-table [dataSource]="m.beneficiaries">
               <ng-container matColumnDef="fullName">
@@ -148,6 +163,32 @@ import { StatusChip } from '../../shared/status-chip';
       </section>
     }
   `,
+  styles: `
+    .header-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .calc-link {
+      margin-left: 8px;
+      font-size: 0.85rem;
+    }
+    .share-bar {
+      display: flex;
+      gap: 3px;
+      height: 10px;
+      margin-bottom: 12px;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    .share-bar span {
+      background: var(--brand-gradient);
+      filter: hue-rotate(calc(var(--i) * 50deg));
+      transform-origin: left;
+      animation: grow-x 700ms var(--ease-out) both;
+      animation-delay: calc(var(--i) * 120ms);
+    }
+  `,
 })
 export class MemberDetailPage {
   private readonly membersApi = inject(MembersApi);
@@ -180,6 +221,13 @@ export class MemberDetailPage {
       return false;
     }
     return user.role === 'ADMIN' || (user.role === 'MEMBER' && user.memberId === m.id);
+  });
+
+  /** Same rule as the API: admins, or the member themselves. */
+  protected readonly canEditBeneficiaries = computed(() => {
+    const m = this.member();
+    const user = this.auth.user();
+    return !!m && !!user && (user.role === 'ADMIN' || (user.role === 'MEMBER' && user.memberId === m.id));
   });
 
   constructor() {
