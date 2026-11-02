@@ -1,0 +1,6 @@
+# Entry point so `docker compose up` works from the repo root.
+# Service definitions live in infra/; overrides go in infra/.env (see infra/.env.example).
+name: grouplife
+
+include:
+  - infra/docker-compose.yml
