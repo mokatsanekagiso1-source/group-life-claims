@@ -4,9 +4,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.grouplife.support.IntegrationTest;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.autoconfigure.actuate.observability.AutoConfigureObservability;
 import org.springframework.boot.test.web.server.LocalManagementPort;
 import org.springframework.http.HttpStatus;
 
+/** Spring Boot disables metrics export in tests by default; this class opts back in to check Prometheus. */
+@AutoConfigureObservability
 class ApplicationSmokeIT extends IntegrationTest {
 
     @LocalManagementPort
