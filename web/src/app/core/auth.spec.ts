@@ -91,9 +91,9 @@ describe('AuthService and authInterceptor', () => {
     expect(auth.homeRoute()).toEqual(['/members', 'm-9']);
 
     signIn(session({ role: 'ASSESSOR', memberId: null }));
-    expect(auth.homeRoute()).toEqual(['/claims']);
+    expect(auth.homeRoute()).toEqual(['/dashboard']);
 
     signIn(session({ role: 'ADMIN', memberId: null }));
-    expect(auth.homeRoute()).toEqual(['/members']);
+    expect(auth.homeRoute()).toEqual(['/dashboard']);
   });
 });

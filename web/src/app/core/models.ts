@@ -90,6 +90,7 @@ export interface ClaimSummary {
   coverAmount: number;
   submittedAt: string;
   decidedAt: string | null;
+  assignee: string | null;
 }
 
 export interface ClaimTransition {
@@ -119,6 +120,133 @@ export interface SubmitClaimRequest {
   coverType: CoverType;
   eventDate: string;
   description: string;
+}
+
+export type DocumentCategory =
+  | 'DEATH_CERTIFICATE'
+  | 'MEDICAL_REPORT'
+  | 'ID_DOCUMENT'
+  | 'POLICE_REPORT'
+  | 'BANK_CONFIRMATION'
+  | 'OTHER';
+
+export interface ClaimNote {
+  id: string;
+  author: string;
+  authorRole: Role;
+  body: string;
+  internal: boolean;
+  createdAt: string;
+}
+
+export interface ClaimDocument {
+  id: string;
+  fileName: string;
+  contentType: string;
+  sizeBytes: number;
+  category: DocumentCategory;
+  uploadedBy: string;
+  uploadedAt: string;
+}
+
+export type NotificationType =
+  | 'CLAIM_SUBMITTED'
+  | 'CLAIM_STATUS_CHANGED'
+  | 'CLAIM_WITHDRAWN'
+  | 'NOTE_ADDED'
+  | 'DOCUMENT_ADDED';
+
+export interface AppNotification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  body: string;
+  link: string | null;
+  read: boolean;
+  createdAt: string;
+}
+
+export interface NotificationFeed {
+  unread: number;
+  items: AppNotification[];
+}
+
+export interface MonthCount {
+  month: string;
+  count: number;
+}
+
+export interface AgingClaim {
+  id: string;
+  claimNumber: string;
+  memberName: string;
+  status: ClaimStatus;
+  assignee: string | null;
+  submittedAt: string;
+  ageDays: number;
+}
+
+export interface ActivityItem {
+  claimId: string;
+  claimNumber: string;
+  memberName: string;
+  fromStatus: ClaimStatus | null;
+  toStatus: ClaimStatus;
+  actor: string;
+  reason: string | null;
+  occurredAt: string;
+}
+
+export interface Dashboard {
+  claimsByStatus: Record<ClaimStatus, number>;
+  openClaims: number;
+  assignedToMe: number;
+  unassigned: number;
+  paidOut: number;
+  awaitingPayment: number;
+  averageDecisionHours: number | null;
+  decidedWithinSla: number;
+  decided: number;
+  submittedByMonth: MonthCount[];
+  oldestOpen: AgingClaim[];
+  recentActivity: ActivityItem[];
+  activeMembers: number;
+  schemes: number;
+  generatedAt: string;
+}
+
+export interface RateBand {
+  minAge: number;
+  maxAge: number;
+  monthlyRate: number;
+}
+
+export interface Scheme {
+  id: string;
+  name: string;
+  registrationNumber: string;
+  contactEmail: string;
+  policyCount: number;
+  createdAt: string;
+}
+
+export interface Policy {
+  id: string;
+  schemeId: string;
+  schemeName: string;
+  policyNumber: string;
+  coverTypes: CoverType[];
+  coverMultiple: number;
+  waitingPeriodMonths: number;
+  effectiveDate: string;
+  status: 'ACTIVE' | 'SUSPENDED' | 'CANCELLED';
+  memberCount: number;
+}
+
+export interface BeneficiaryInput {
+  fullName: string;
+  relationship: string;
+  allocationPercent: number;
 }
 
 /** RFC 9457 problem details, plus the API's extension members. */

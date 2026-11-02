@@ -1,4 +1,35 @@
-import { ClaimStatus, CoverType } from '../core/models';
+import { ClaimStatus, CoverType, DocumentCategory } from '../core/models';
+
+/** Theme-aware colour for each status, defined in styles.scss. */
+export const STATUS_COLORS: Record<ClaimStatus, string> = {
+  SUBMITTED: 'var(--status-submitted)',
+  UNDER_ASSESSMENT: 'var(--status-assessment)',
+  APPROVED: 'var(--status-approved)',
+  REJECTED: 'var(--status-rejected)',
+  PAID: 'var(--status-paid)',
+  CANCELLED: 'var(--status-cancelled)',
+};
+
+export const STATUS_ICONS: Record<ClaimStatus, string> = {
+  SUBMITTED: 'upload_file',
+  UNDER_ASSESSMENT: 'manage_search',
+  APPROVED: 'check_circle',
+  REJECTED: 'cancel',
+  PAID: 'payments',
+  CANCELLED: 'block',
+};
+
+export const DOCUMENT_LABELS: Record<DocumentCategory, string> = {
+  DEATH_CERTIFICATE: 'Death certificate',
+  MEDICAL_REPORT: 'Medical report',
+  ID_DOCUMENT: 'ID document',
+  POLICE_REPORT: 'Police report',
+  BANK_CONFIRMATION: 'Bank confirmation',
+  OTHER: 'Other',
+};
+
+/** Days an open claim may wait before it counts as overdue; mirrors the API's decision SLA. */
+export const SLA_DAYS = 3;
 
 export const STATUS_LABELS: Record<ClaimStatus, string> = {
   SUBMITTED: 'Submitted',

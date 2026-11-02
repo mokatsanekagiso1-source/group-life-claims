@@ -61,9 +61,8 @@ export class AuthService {
       case 'MEMBER':
         return ['/members', session.memberId ?? ''];
       case 'ASSESSOR':
-        return ['/claims'];
       case 'ADMIN':
-        return ['/members'];
+        return ['/dashboard'];
       default:
         return ['/login'];
     }

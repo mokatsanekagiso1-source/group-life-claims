@@ -1,6 +1,8 @@
 @use '@angular/material' as mat;
+@use './animations';
 
 html {
+  // Material's tokens use light-dark(), so ThemeService switches themes by setting color-scheme.
   color-scheme: light dark;
   @include mat.theme(
     (
@@ -9,6 +11,14 @@ html {
       density: 0,
     )
   );
+
+  --brand-gradient: linear-gradient(135deg, #3b6cf6 0%, #7c4dff 55%, #00b8d9 100%);
+  --status-submitted: light-dark(#5b6b8c, #a9b6d3);
+  --status-assessment: light-dark(#b26a00, #ffb74d);
+  --status-approved: light-dark(#1b7f3b, #66d08a);
+  --status-paid: light-dark(#0b6bcb, #6fb6ff);
+  --status-rejected: light-dark(#b3261e, #ff8a80);
+  --status-cancelled: light-dark(#6f6f6f, #b0b0b0);
 }
 
 html,
