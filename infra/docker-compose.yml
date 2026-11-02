@@ -23,7 +23,9 @@ services:
       DB_PASSWORD: ${POSTGRES_PASSWORD:-grouplife}
       # The dev profile seeds synthetic demo data and supplies a non-secret signing key.
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
-      JWT_SECRET: ${JWT_SECRET:-}
+      # An empty value would override Spring's own default, so compose supplies the same
+      # well-known dev key. Set JWT_SECRET in infra/.env for anything beyond local use.
+      JWT_SECRET: ${JWT_SECRET:-dev-only-signing-key-not-for-production-use}
       BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-}
     # Only the API port is published; actuator (8081) is reachable inside this network only.
     ports:
