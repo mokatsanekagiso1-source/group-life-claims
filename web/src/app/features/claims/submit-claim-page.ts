@@ -52,7 +52,7 @@ import { COVER_LABELS } from '../../shared/labels';
             <mat-form-field appearance="outline">
               <mat-label>Date of the event</mat-label>
               <input matInput [matDatepicker]="picker" formControlName="eventDate" [max]="today" data-cy="event-date" />
-              <mat-hint>DD/MM/YYYY or pick a date</mat-hint>
+              <mat-hint>MM/DD/YYYY or pick a date</mat-hint>
               <mat-datepicker-toggle matIconSuffix [for]="picker" />
               <mat-datepicker #picker />
               <mat-error>Enter a date that is not in the future.</mat-error>

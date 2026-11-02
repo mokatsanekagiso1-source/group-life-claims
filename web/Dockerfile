@@ -3,6 +3,8 @@
 FROM node:24-alpine AS build
 WORKDIR /workspace
 COPY package.json package-lock.json ./
+# The Cypress test runner is a dev dependency; its browser binary is not needed to build the app.
+ENV CYPRESS_INSTALL_BINARY=0
 RUN npm ci
 COPY . .
 RUN npm run build
