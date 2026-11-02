@@ -23,10 +23,18 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
-      - name: Build and test (Testcontainers uses the runner's Docker)
+      - name: Unit and integration tests (Testcontainers uses the runner's Docker)
         run: |
           chmod +x mvnw
           ./mvnw -B verify
+      - name: Test reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-test-reports
+          path: |
+            api/target/surefire-reports
+            api/target/failsafe-reports
 
   web:
     name: Web build and test
@@ -34,6 +42,8 @@ jobs:
     defaults:
       run:
         working-directory: web
+    env:
+      CYPRESS_INSTALL_BINARY: 0
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -45,14 +55,27 @@ jobs:
       - run: npm test -- --watch=false
       - run: npm run build
 
-  compose:
-    name: Compose smoke test
+  e2e:
+    name: Compose stack and end-to-end tests
     runs-on: ubuntu-latest
     needs: [api, web]
     steps:
       - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Cache the Cypress binary
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/Cypress
+          key: cypress-${{ runner.os }}-${{ hashFiles('web/package-lock.json') }}
+      - name: Install web dependencies
+        working-directory: web
+        run: npm ci
       - name: Start the stack
-        run: docker compose up --build --detach --wait --wait-timeout 180
+        run: docker compose up --build --detach --wait --wait-timeout 240
       - name: Web serves the app and proxies the API health check
         run: |
           curl -fsS http://localhost:4200/ | grep -q '<app-root>'
@@ -68,6 +91,16 @@ jobs:
           curl -fsS 'http://localhost:9090/api/v1/query?query=grouplife_claims_status' | grep -q '"status":"PAID"'
           curl -fsS http://localhost:3000/api/health | grep -q '"database": *"ok"'
           curl -fsS http://localhost:3000/api/dashboards/uid/grouplife-claims | grep -q 'Group Life Claims'
+      - name: Cypress
+        working-directory: web
+        run: npx cypress run
+      - name: Cypress screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-screenshots
+          path: web/cypress/screenshots
+          if-no-files-found: ignore
       - name: Logs on failure
         if: failure()
         run: docker compose logs
