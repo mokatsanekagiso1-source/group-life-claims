@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: grouplife-api
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/grouplife}
+    username: ${DB_USERNAME:grouplife}
+    password: ${DB_PASSWORD:grouplife}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true

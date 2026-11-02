@@ -1,0 +1,12 @@
+package dev.grouplife;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class GroupLifeApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(GroupLifeApplication.class, args);
+    }
+}
